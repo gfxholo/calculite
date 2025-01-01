@@ -1,0 +1,10 @@
+{
+	"id": "calculite",
+	"name": "Calculite",
+	"version": "1.0.0",
+	"minAppVersion": "0.13.30",
+	"description": "Standard calculator with a simple button layout.",
+	"author": "Holo",
+	"authorUrl": "https://github.com/gfxholo",
+	"isDesktopOnly": false
+}
