@@ -1,3 +1,82 @@
 .mod-rtl svg.svg-icon.lucide-calculator {
 	transform: unset;
 }
+
+.is-popout-window .calculite,
+.mod-left-split .calculite,
+.hider-status .calculite {
+	padding-bottom: var(--size-4-3, 10px); /* Pre-1.0 compatible */
+}
+
+.calculite {
+	display: grid;
+	direction: ltr;
+	grid-template-rows: repeat(2, min-content);
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: var(--size-4-1, 4px); /* Pre-1.0 compatible */
+	height: 100%;
+}
+
+.calculite > .calculite-screen {
+	grid-column: span 4;
+
+	display: flex;
+	align-items: center;
+	justify-content: right;
+
+	font-size: 3em;
+	font-weight: 600;
+	line-height: normal;
+	white-space: nowrap;
+	user-select: text;
+}
+
+.calculite > button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	height: unset;
+	min-height: 0;
+	margin: 0;
+}
+
+.calculite > button.calculite-delete {
+	background-color: var(--background-primary);
+	font-size: 1.5em;
+}
+
+.calculite > button.calculite-numeric {
+	background-color: var(--interactive-normal);
+	font-size: 2em;
+}
+
+.calculite > button.calculite-operator {
+	color: var(--text-on-accent);
+	background-color: var(--interactive-accent);
+	font-size: 2em;
+}
+
+body:not(.is-mobile) .calculite > button.calculite-delete:hover {
+	background-color: var(--background-primary-alt);
+}
+
+body:not(.is-mobile) .calculite > button.calculite-numeric:hover {
+	background-color: var(--interactive-hover);
+}
+
+body:not(.is-mobile) .calculite > button.calculite-operator:hover {
+	background-color: var(--interactive-accent-hover);
+}
+
+.calculite > button.calculite-delete:hover:active {
+	background-color: color-mix(in srgb, var(--background-primary), black 15%);
+}
+
+.calculite > button.calculite-numeric:hover:active {
+	background-color: color-mix(in srgb, var(--interactive-normal), black 15%);
+}
+
+.calculite > button.calculite-operator:hover:active {
+	background-color: color-mix(in srgb, var(--interactive-accent), black 15%);
+}
