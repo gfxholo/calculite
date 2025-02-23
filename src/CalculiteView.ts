@@ -4,6 +4,10 @@ export const VIEW_TYPE = 'calculite';
 const DISPLAY_TEXT = 'Calculite';
 const ICON = 'lucide-calculator';
 
+// Number formatting
+const NUMBER_FORMAT = new Intl.NumberFormat(localStorage.language); // Pre-1.8.7 compatible
+const DECIMAL_SYMBOL = NUMBER_FORMAT.format(0.1).toString()[1];
+
 // Button IDs
 const CLEAR = 'C';
 const CLEAR_ENTRY = 'CE';
@@ -18,7 +22,7 @@ const DIGIT_6 = '6';
 const DIGIT_7 = '7';
 const DIGIT_8 = '8';
 const DIGIT_9 = '9';
-const DECIMAL = '.';
+const DECIMAL = DECIMAL_SYMBOL;
 const NEGATE = '±';
 const ADD = '+';
 const SUBTRACT = '−';
@@ -190,7 +194,7 @@ export class CalculiteView extends ItemView {
 		this.scope.register([], '7', () => this.pressDigit(7));
 		this.scope.register([], '8', () => this.pressDigit(8));
 		this.scope.register([], '9', () => this.pressDigit(9));
-		this.scope.register([], '.', () => this.pressDecimal());
+		this.scope.register([], DECIMAL_SYMBOL, () => this.pressDecimal());
 		this.scope.register([], 'F9', () => this.pressNegate());
 
 		// Register operator hotkeys
@@ -440,7 +444,7 @@ export class CalculiteView extends ItemView {
 			output = '0';
 		} else {
 			// Replace ASCII symbols with typographical symbols
-			output = String(output).replace('-', '−');
+			output = String(output).replace('-', '−').replace('.', DECIMAL_SYMBOL);
 		}
 
 		// Output to screen
