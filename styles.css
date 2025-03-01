@@ -17,6 +17,20 @@
 	height: 100%;
 }
 
+.calculite > .calculite-subscreen {
+	grid-column: span 4;
+
+	display: flex;
+	align-items: center;
+	justify-content: right;
+
+	color: var(--text-faint);
+	font-size: 1em;
+	line-height: normal;
+	white-space: nowrap;
+	user-select: text;
+}
+
 .calculite > .calculite-screen {
 	grid-column: span 4;
 
@@ -29,6 +43,10 @@
 	line-height: normal;
 	white-space: nowrap;
 	user-select: text;
+}
+
+.calculite > .calculite-invisible {
+	visibility: hidden;
 }
 
 .calculite > button {

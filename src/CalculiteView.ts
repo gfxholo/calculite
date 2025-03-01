@@ -35,6 +35,8 @@ const EQUALS = '=';
  */
 export class CalculiteView extends ItemView {
 
+	// Screens
+	private subscreenEl: HTMLDivElement;
 	private screenEl: HTMLDivElement;
 
 	// Numeric state
@@ -82,7 +84,7 @@ export class CalculiteView extends ItemView {
 		this.contentEl.addClass('calculite');
 
 		// Create UI elements
-		this.createScreen();
+		this.createScreens();
 		this.createButtons();
 
 		// Register keyboard shortcuts
@@ -90,10 +92,12 @@ export class CalculiteView extends ItemView {
 	}
 
 	/**
-	 * Create a screen for showing input and output.
+	 * Create two screens for showing input and output.
 	 */
-	private createScreen(): void {
+	private createScreens(): void {
+		this.subscreenEl = this.contentEl.createDiv({ cls: 'calculite-subscreen' });
 		this.screenEl = this.contentEl.createDiv({ cls: 'calculite-screen' });
+		this.updateSubscreen(null);
 		this.updateScreen(null);
 	}
 
@@ -217,7 +221,7 @@ export class CalculiteView extends ItemView {
 	}
 
 	/**
-	 * Clear the screen, and reset the equation.
+	 * Clear the main screen, and reset the equation.
 	 */
 	private pressClear(): void {
 		this.previousResult = null;
@@ -227,12 +231,13 @@ export class CalculiteView extends ItemView {
 		this.currentOperator = null;
 		this.currentInput = null;
 
-		// Update screen
+		// Update both screens
+		this.updateSubscreen(null);
 		this.updateScreen(this.currentInput);
 	}
 
 	/**
-	 * Clear the screen, but continue the equation.
+	 * Clear the main screen, but continue the equation.
 	 */
 	private pressClearEntry(): void {
 		// If no operator is active, clear all
@@ -248,7 +253,7 @@ export class CalculiteView extends ItemView {
 	}
 
 	/**
-	 * Delete the last character from the screen.
+	 * Delete the last character from the main screen.
 	 * @param shiftKey If true, delete the first character instead.
 	 */
 	private pressBack(shiftKey?: boolean): void {
@@ -271,7 +276,7 @@ export class CalculiteView extends ItemView {
 	}
 
 	/**
-	 * Append a digit to the screen.
+	 * Append a digit to the main screen.
 	 * @param digit Number from 0-9.
 	 */
 	private pressDigit(digit: 0|1|2|3|4|5|6|7|8|9): void {
@@ -296,7 +301,7 @@ export class CalculiteView extends ItemView {
 	}
 
 	/**
-	 * Append a decimal symbol to the screen.
+	 * Append a decimal symbol to the main screen.
 	 */
 	private pressDecimal(): void {
 		// If input is empty:
@@ -375,7 +380,8 @@ export class CalculiteView extends ItemView {
 		this.currentInput = null;
 		this.currentOperator = operator;
 
-		// Update screen
+		// Update both screens
+		this.updateSubscreen([this.currentResult, this.currentOperator]);
 		this.updateScreen(this.currentResult);
 	}
 
@@ -412,7 +418,12 @@ export class CalculiteView extends ItemView {
 		this.currentOperator = null;
 		this.currentInput = null;
 
-		// Update screen
+		// Update both screens
+		if (this.previousOperator) {
+			this.updateSubscreen([this.previousResult, this.previousOperator, this.previousInput, '=']);
+		} else {
+			this.updateSubscreen([this.previousInput, '=']);
+		}
 		this.updateScreen(this.currentResult);
 	}
 
@@ -436,7 +447,29 @@ export class CalculiteView extends ItemView {
 	}
 
 	/**
-	 * Update the screen.
+	 * Update the subscreen.
+	 * @param output An array of numbers and strings. Null values are skipped.
+	 */
+	private updateSubscreen(outputs: (number | string | null)[] | null): void {
+		let output: string;
+		if (outputs === null) {
+			output = '0'; // Preserve subscreen height while blank
+		} else {
+			// Replace ASCII symbols with typographic symbols
+			output = outputs.join(' ')
+				.replace(/\./g, DECIMAL_SYMBOL)
+				.replace(/-/g, '−')
+				.replace('*', '×')
+				.replace('/', '÷')
+		}
+
+		// Output to subscreen
+		this.subscreenEl.setText(output);
+		this.subscreenEl.toggleClass('calculite-invisible', outputs === null);
+	}
+
+	/**
+	 * Update the main screen.
 	 * @param output A number or string. Null clears the screen.
 	 */
 	private updateScreen(output: number | string | null): void {
