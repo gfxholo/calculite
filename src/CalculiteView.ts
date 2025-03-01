@@ -7,6 +7,7 @@ const ICON = 'lucide-calculator';
 // Number formatting
 const NUMBER_FORMAT = new Intl.NumberFormat(localStorage.language); // Pre-1.8.7 compatible
 const DECIMAL_SYMBOL = NUMBER_FORMAT.format(0.1).toString()[1];
+const NON_NUMERIC_CHARS = new RegExp('[^-0-9' + DECIMAL_SYMBOL + ']', 'g');
 
 // Button IDs
 const CLEAR = 'C';
@@ -95,10 +96,43 @@ export class CalculiteView extends ItemView {
 	 * Create two screens for showing input and output.
 	 */
 	private createScreens(): void {
+		// Create both screens
 		this.subscreenEl = this.contentEl.createDiv({ cls: 'calculite-subscreen' });
 		this.screenEl = this.contentEl.createDiv({ cls: 'calculite-screen' });
 		this.updateSubscreen(null);
 		this.updateScreen(null);
+
+		// Register copy listener (Ctrl+C)
+		this.registerDomEvent(this.containerEl, 'copy', event => {
+			if (this.getScreenSelection(this.subscreenEl)) {
+				this.copyScreen(this.subscreenEl, event);
+			} else {
+				this.copyScreen(this.screenEl, event);
+			}
+		});
+
+		// Register paste listener (Ctrl+V)
+		this.registerDomEvent(this.containerEl, 'paste', event => {
+			this.pasteScreen(event);
+		});
+
+		// Register animation listeners
+		this.registerScreenListener(this.screenEl);
+		this.registerScreenListener(this.subscreenEl);
+	}
+
+	/**
+	 * Set up animation listener on a given screen.
+	 * @param screenEl Any screen element.
+	 */
+	private registerScreenListener(screenEl: HTMLDivElement): void {
+		this.registerDomEvent(screenEl, 'animationend', event => {
+			switch (event.animationName) {
+				// Remove animation class after motion stops
+				case 'copied': screenEl.removeClass('calculite-copied'); break;
+				case 'pasted': screenEl.removeClass('calculite-pasted'); break;
+			}
+		});
 	}
 
 	/**
@@ -482,5 +516,69 @@ export class CalculiteView extends ItemView {
 
 		// Output to screen
 		this.screenEl.setText(output);
+	}
+
+	/**
+	 * Copy a screen to the clipboard.
+	 * @param screenEl Any screen element.
+	 * @param event Clipboard event to cancel.
+	 */
+	private copyScreen(screenEl: HTMLDivElement, event?: ClipboardEvent): void {
+		event?.preventDefault();
+
+		// Get selected text (or all text) from screen
+		const selection = this.getScreenSelection(screenEl);
+		const copiedText = selection?.toString() ?? screenEl.getText();
+
+		// Write to clipboard
+		navigator.clipboard.writeText(copiedText);
+
+		// Trigger animation
+		screenEl.addClass('calculite-copied');
+	}
+
+	/**
+	 * Paste clipboard to the main screen.
+	 * @param event Clipboard event to cancel.
+	 */
+	private async pasteScreen(event?: ClipboardEvent): Promise<void> {
+		event?.preventDefault();
+
+		// Clear any finished calculations
+		if (this.currentOperator === null) {
+			this.pressClear();
+		}
+
+		// Get text from clipboard
+		const pastedText = await navigator.clipboard.readText();
+
+		// Remove all non-numeric characters
+		const pastedNumerics = pastedText.replace(NON_NUMERIC_CHARS, '') || 'NaN';
+		const pastedNumber = Number(pastedNumerics);
+
+		// Reject invalid numbers like NaN and Infinity
+		if (!Number.isFinite(pastedNumber)) {
+			this.currentInput = null;
+			this.updateScreen('Invalid number');
+		} else {
+			this.currentInput = pastedNumerics;
+			this.updateScreen(this.currentInput);
+		}
+
+		// Trigger animation
+		this.screenEl.addClass('calculite-pasted');
+	}
+
+	/**
+	 * Get the current text selection from a given screen.
+	 * @param screenEl Any screen element.
+	 * @returns A selection object, or null if the given screen is not selected.
+	 */
+	private getScreenSelection(screenEl: HTMLDivElement): Selection | null {
+		const doc = window.activeDocument ?? document; // Pre-0.15 compatible
+		const selection = doc.getSelection();
+		const node = screenEl.firstChild ?? screenEl;
+
+		return selection?.containsNode(node) ? selection : null;
 	}
 }

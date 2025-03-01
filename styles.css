@@ -49,6 +49,32 @@
 	visibility: hidden;
 }
 
+.calculite > .calculite-copied {
+	animation-name: copied;
+	animation-duration: var(--anim-duration-fast);
+	animation-timing-function: var(--anim-motion-smooth);
+}
+
+.calculite > .calculite-pasted {
+	animation-name: pasted;
+	animation-duration: var(--anim-duration-fast);
+	animation-timing-function: var(--anim-motion-smooth);
+}
+
+@keyframes copied {
+	50% {
+		translate: 0 -0.25em;
+		text-shadow: 0px 0px 10px var(--interactive-accent);
+	}
+}
+
+@keyframes pasted {
+	50% {
+		translate: 0 -0.25em;
+		text-shadow: 0px 0px 10px var(--interactive-accent);
+	}
+}
+
 .calculite > button {
 	display: flex;
 	align-items: center;
