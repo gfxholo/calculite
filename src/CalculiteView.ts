@@ -1,4 +1,4 @@
-import { IconName, ItemView, Scope, WorkspaceLeaf } from 'obsidian';
+import { IconName, ItemView, Platform, Scope, WorkspaceLeaf } from 'obsidian';
 
 export const VIEW_TYPE = 'calculite';
 const DISPLAY_TEXT = 'Calculite';
@@ -90,6 +90,25 @@ export class CalculiteView extends ItemView {
 
 		// Register keyboard shortcuts
 		this.registerHotkeys();
+
+		// Initialize font scaling
+		this.onResize();
+	}
+
+	/**
+	 * Scale font size based on calculator dimensions.
+	 * @override
+	 */
+	onResize(): void {
+		// Find the dimension closest to a vertical golden rectangle
+		const dimension = Math.min(this.contentEl.clientHeight, this.contentEl.clientWidth * 1.618);
+
+		// Set a divisor that converts length into a font size
+		const divisor = Platform.isMobile ? 35 : 25;
+
+		// Update font size
+		const fontSize = Math.max(8, dimension / divisor);
+		this.contentEl.style.fontSize = fontSize + 'px';
 	}
 
 	/**
