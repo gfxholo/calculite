@@ -6,6 +6,7 @@ const ICON = 'lucide-calculator';
 
 // Number formatting
 const NUMBER_FORMAT = new Intl.NumberFormat(localStorage.language); // Pre-1.8.7 compatible
+const GROUPING_SYMBOL = NUMBER_FORMAT.format(1000).toString()[1];
 const DECIMAL_SYMBOL = NUMBER_FORMAT.format(0.1).toString()[1];
 const NON_NUMERIC_CHARS = new RegExp('[^-0-9' + DECIMAL_SYMBOL + ']', 'g');
 
@@ -531,6 +532,22 @@ export class CalculiteView extends ItemView {
 		} else {
 			// Replace ASCII symbols with typographical symbols
 			output = String(output).replace('-', '−').replace('.', DECIMAL_SYMBOL);
+
+			// Separate digits in groups of 3
+			if (!output.includes('e')) {
+				// Locate first digit
+				const indexL = output.startsWith('−') ? 1 : 0;
+
+				// Locate decimal point
+				const indexR = output.includes(DECIMAL_SYMBOL)
+					? output.indexOf(DECIMAL_SYMBOL)
+					: output.length;
+
+				// Insert separators from right-to-left
+				for (let i = indexR - 3; i > indexL; i -= 3) {
+					output = output.slice(0, i) + GROUPING_SYMBOL + output.slice(i);
+				}
+			}
 		}
 
 		// Output to screen
