@@ -1,4 +1,4 @@
-import { IconName, ItemView, Platform, Scope, WorkspaceLeaf } from 'obsidian';
+import { IconName, ItemView, Menu, Platform, Scope, WorkspaceLeaf } from 'obsidian';
 
 export const VIEW_TYPE = 'calculite';
 const DISPLAY_TEXT = 'Calculite';
@@ -136,16 +136,50 @@ export class CalculiteView extends ItemView {
 			this.pasteScreen(event);
 		});
 
-		// Register animation listeners
-		this.registerScreenListener(this.screenEl);
-		this.registerScreenListener(this.subscreenEl);
+		// Register menu & animation listeners
+		this.registerScreenListeners(this.subscreenEl);
+		this.registerScreenListeners(this.screenEl);
 	}
 
 	/**
-	 * Set up animation listener on a given screen.
+	 * Set up menu & animation listeners on a given screen.
 	 * @param screenEl Any screen element.
 	 */
-	private registerScreenListener(screenEl: HTMLDivElement): void {
+	private registerScreenListeners(screenEl: HTMLDivElement): void {
+		// Register menu listener
+		this.registerDomEvent(screenEl, 'contextmenu', event => {
+			event.preventDefault();
+
+			// @ts-expect-error (Pre-0.14.3 compatible)
+			const menu = new Menu(this.app);
+
+			// ITEM: Copy
+			menu.addItem(menuItem => menuItem
+				.setTitle(this.getScreenSelection(screenEl) ? 'Copy selection' : 'Copy')
+				.setIcon('lucide-copy')
+				.onClick(() => this.copyScreen(screenEl))
+			);
+
+			// ITEM: Paste
+			if (screenEl === this.screenEl) {
+				menu.addItem(menuItem => menuItem
+					.setTitle('Paste')
+					.setIcon('lucide-clipboard-check')
+					.onClick(() => this.pasteScreen())
+				);
+			}
+
+			// ITEM: Select all
+			menu.addItem(menuItem => menuItem
+				.setTitle('Select all')
+				.setIcon('lucide-box-select')
+				.onClick(() => this.selectScreen(screenEl))
+			);
+
+			menu.showAtMouseEvent(event);
+		});
+
+		// Register animation listener
 		this.registerDomEvent(screenEl, 'animationend', event => {
 			switch (event.animationName) {
 				// Remove animation class after motion stops
@@ -603,6 +637,20 @@ export class CalculiteView extends ItemView {
 
 		// Trigger animation
 		this.screenEl.addClass('calculite-pasted');
+	}
+
+	/**
+	 * Select all text on a given screen.
+	 * @param screenEl Any screen element.
+	 */
+	private selectScreen(screenEl: HTMLDivElement): void {
+		const doc = window.activeDocument ?? document; // Pre-0.15 compatible
+		const selection = doc.getSelection();
+		const range = doc.createRange();
+
+		range.selectNode(screenEl);
+		selection?.removeAllRanges();
+		selection?.addRange(range);
 	}
 
 	/**
