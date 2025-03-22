@@ -113,14 +113,17 @@ body:not(.is-mobile) .calculite > button.calculite-operator:hover {
 	background-color: var(--interactive-accent-hover);
 }
 
-.calculite > button.calculite-delete:hover:active {
+.calculite > button.calculite-delete:hover:active,
+.calculite > button.calculite-delete.calculite-hotkey-pressed {
 	background-color: color-mix(in srgb, var(--background-primary), black 15%);
 }
 
-.calculite > button.calculite-numeric:hover:active {
+.calculite > button.calculite-numeric:hover:active,
+.calculite > button.calculite-numeric.calculite-hotkey-pressed {
 	background-color: color-mix(in srgb, var(--interactive-normal), black 15%);
 }
 
-.calculite > button.calculite-operator:hover:active {
+.calculite > button.calculite-operator:hover:active,
+.calculite > button.calculite-operator.calculite-hotkey-pressed {
 	background-color: color-mix(in srgb, var(--interactive-accent), black 15%);
 }

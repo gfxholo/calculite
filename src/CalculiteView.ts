@@ -49,6 +49,11 @@ export class CalculiteView extends ItemView {
 	private currentOperator: string | null = null;
 	private currentInput: string | null = null;
 
+	// Button state
+	private hotkeyButtonMap: Map<string | number, HTMLButtonElement> = new Map();
+	private currentHotkeyButtonId: string | null = null;
+	private currentHotkeyTimerId: number | undefined;
+
 	constructor(leaf: WorkspaceLeaf) {
 		super(leaf);
 	}
@@ -196,71 +201,91 @@ export class CalculiteView extends ItemView {
 		// Create 1st row
 		this.contentEl.createEl('button', { cls: 'calculite-delete', text: CLEAR }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressClear());
+			this.hotkeyButtonMap.set(CLEAR, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-delete', text: CLEAR_ENTRY }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressClearEntry());
+			this.hotkeyButtonMap.set(CLEAR_ENTRY, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-delete', text: BACK }, el => {
 			this.registerDomEvent(el, 'click', event => this.pressBack(event.shiftKey));
+			this.hotkeyButtonMap.set(BACK, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-operator', text: DIVIDE }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressOperator(DIVIDE));
+			this.hotkeyButtonMap.set(DIVIDE, el);
 		});
 
 		// Create 2nd row
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_7 }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressDigit(7));
+			this.hotkeyButtonMap.set(DIGIT_7, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_8 }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressDigit(8));
+			this.hotkeyButtonMap.set(DIGIT_8, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_9 }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressDigit(9));
+			this.hotkeyButtonMap.set(DIGIT_9, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-operator', text: MULTIPLY }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressOperator(MULTIPLY));
+			this.hotkeyButtonMap.set(MULTIPLY, el);
 		});
 
 		// Create 3rd row
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_4 }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressDigit(4));
+			this.hotkeyButtonMap.set(DIGIT_4, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_5 }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressDigit(5));
+			this.hotkeyButtonMap.set(DIGIT_5, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_6 }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressDigit(6));
+			this.hotkeyButtonMap.set(DIGIT_6, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-operator', text: SUBTRACT }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressOperator(SUBTRACT));
+			this.hotkeyButtonMap.set(SUBTRACT, el);
 		});
 
 		// Create 4th row
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_1 }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressDigit(1));
+			this.hotkeyButtonMap.set(DIGIT_1, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_2 }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressDigit(2));
+			this.hotkeyButtonMap.set(DIGIT_2, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_3 }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressDigit(3));
+			this.hotkeyButtonMap.set(DIGIT_3, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-operator', text: ADD }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressOperator(ADD));
+			this.hotkeyButtonMap.set(ADD, el);
 		});
 
 		// Create 5th row
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: NEGATE }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressNegate());
+			this.hotkeyButtonMap.set(NEGATE, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_0 }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressDigit(0));
+			this.hotkeyButtonMap.set(DIGIT_0, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DECIMAL }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressDecimal());
+			this.hotkeyButtonMap.set(DECIMAL, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-operator', text: EQUALS }, el => {
 			this.registerDomEvent(el, 'click', () => this.pressEquals());
+			this.hotkeyButtonMap.set(EQUALS, el);
 		});
 	}
 
@@ -272,40 +297,158 @@ export class CalculiteView extends ItemView {
 		this.scope = new Scope(this.app.scope);
 
 		// Register simple hotkeys
-		this.scope.register([], 'C', () => this.pressClear());
-		this.scope.register([], 'Escape', () => this.pressClear());
-		this.scope.register([], 'Delete', () => this.pressClearEntry());
-		this.scope.register([], 'Backspace', () => this.pressBack());
-		this.scope.register([], '0', () => this.pressDigit(0));
-		this.scope.register([], '1', () => this.pressDigit(1));
-		this.scope.register([], '2', () => this.pressDigit(2));
-		this.scope.register([], '3', () => this.pressDigit(3));
-		this.scope.register([], '4', () => this.pressDigit(4));
-		this.scope.register([], '5', () => this.pressDigit(5));
-		this.scope.register([], '6', () => this.pressDigit(6));
-		this.scope.register([], '7', () => this.pressDigit(7));
-		this.scope.register([], '8', () => this.pressDigit(8));
-		this.scope.register([], '9', () => this.pressDigit(9));
-		this.scope.register([], DECIMAL_SYMBOL, () => this.pressDecimal());
-		this.scope.register([], 'F9', () => this.pressNegate());
+		this.scope.register([], 'C', () => {
+			this.pressClear();
+			this.flashHotkeyButton(CLEAR);
+		});
+		this.scope.register([], 'Escape', () => {
+			this.pressClear();
+			this.flashHotkeyButton(CLEAR);
+		});
+		this.scope.register([], 'Delete', () => {
+			this.pressClearEntry();
+			this.flashHotkeyButton(CLEAR_ENTRY);
+		});
+		this.scope.register([], 'Backspace', () => {
+			this.pressBack();
+			this.flashHotkeyButton(BACK);
+		});
+		this.scope.register([], '0', () => {
+			this.pressDigit(0);
+			this.flashHotkeyButton(DIGIT_0);
+		});
+		this.scope.register([], '1', () => {
+			this.pressDigit(1);
+			this.flashHotkeyButton(DIGIT_1);
+		});
+		this.scope.register([], '2', () => {
+			this.pressDigit(2);
+			this.flashHotkeyButton(DIGIT_2);
+		});
+		this.scope.register([], '3', () => {
+			this.pressDigit(3);
+			this.flashHotkeyButton(DIGIT_3);
+		});
+		this.scope.register([], '4', () => {
+			this.pressDigit(4);
+			this.flashHotkeyButton(DIGIT_4);
+		});
+		this.scope.register([], '5', () => {
+			this.pressDigit(5);
+			this.flashHotkeyButton(DIGIT_5);
+		});
+		this.scope.register([], '6', () => {
+			this.pressDigit(6);
+			this.flashHotkeyButton(DIGIT_6);
+		});
+		this.scope.register([], '7', () => {
+			this.pressDigit(7);
+			this.flashHotkeyButton(DIGIT_7);
+		});
+		this.scope.register([], '8', () => {
+			this.pressDigit(8);
+			this.flashHotkeyButton(DIGIT_8);
+		});
+		this.scope.register([], '9', () => {
+			this.pressDigit(9);
+			this.flashHotkeyButton(DIGIT_9);
+		});
+		this.scope.register([], DECIMAL_SYMBOL, () => {
+			this.pressDecimal();
+			this.flashHotkeyButton(DECIMAL);
+		});
+		this.scope.register([], 'F9', () => {
+			this.pressNegate();
+			this.flashHotkeyButton(NEGATE);
+		});
 
 		// Register operator hotkeys
-		this.scope.register(null, '+', () => this.pressOperator(ADD));
-		this.scope.register(null, '-', () => this.pressOperator(SUBTRACT));
-		this.scope.register(null, '*', () => this.pressOperator(MULTIPLY));
-		this.scope.register(null, '/', () => this.pressOperator(DIVIDE));
-		this.scope.register(null, '=', () => this.pressEquals());
-		this.scope.register([], 'P', () => this.pressOperator(ADD));
-		this.scope.register([], 'O', () => this.pressOperator(SUBTRACT));
-		this.scope.register([], 'X', () => this.pressOperator(MULTIPLY));
-		this.scope.register([], 'T', () => this.pressOperator(MULTIPLY));
-		this.scope.register([], 'Y', () => this.pressOperator(DIVIDE));
-		this.scope.register([], 'Enter', () => this.pressEquals());
+		this.scope.register(null, '+', () => {
+			this.pressOperator(ADD);
+			this.flashHotkeyButton(ADD);
+		});
+		this.scope.register(null, '-', () => {
+			this.pressOperator(SUBTRACT);
+			this.flashHotkeyButton(SUBTRACT);
+		});
+		this.scope.register(null, '*', () => {
+			this.pressOperator(MULTIPLY);
+			this.flashHotkeyButton(MULTIPLY);
+		});
+		this.scope.register(null, '/', () => {
+			this.pressOperator(DIVIDE);
+			this.flashHotkeyButton(DIVIDE);
+		});
+		this.scope.register(null, '=', () => {
+			this.pressEquals();
+			this.flashHotkeyButton(EQUALS);
+		});
+		this.scope.register([], 'P', () => {
+			this.pressOperator(ADD);
+			this.flashHotkeyButton(ADD);
+		});
+		this.scope.register([], 'O', () => {
+			this.pressOperator(SUBTRACT);
+			this.flashHotkeyButton(SUBTRACT);
+		});
+		this.scope.register([], 'X', () => {
+			this.pressOperator(MULTIPLY);
+			this.flashHotkeyButton(MULTIPLY);
+		});
+		this.scope.register([], 'T', () => {
+			this.pressOperator(MULTIPLY);
+			this.flashHotkeyButton(MULTIPLY);
+		});
+		this.scope.register([], 'Y', () => {
+			this.pressOperator(DIVIDE);
+			this.flashHotkeyButton(DIVIDE);
+		});
+		this.scope.register([], 'Enter', () => {
+			this.pressEquals();
+			this.flashHotkeyButton(EQUALS);
+		});
 
 		// Register combo hotkeys
-		this.scope.register(['Shift'], 'Escape', () => this.pressClearEntry());
-		this.scope.register(['Shift'], 'Backspace', () => this.pressBack(true));
-		this.scope.register(['Alt'], '-', () => this.pressNegate());
+		this.scope.register(['Shift'], 'Escape', () => {
+			this.pressClearEntry();
+			this.flashHotkeyButton(CLEAR_ENTRY);
+		});
+		this.scope.register(['Shift'], 'Backspace', () => {
+			this.pressBack(true);
+			this.flashHotkeyButton(BACK);
+		});
+		this.scope.register(['Alt'], '-', () => {
+			this.pressNegate();
+			this.flashHotkeyButton(NEGATE);
+		});
+	}
+
+	/**
+	 * Flash a button in response to a pressed hotkey.
+	 * @param buttonId ID of a calculator button.
+	 */
+	private flashHotkeyButton(buttonId: string): void {
+		if (this.currentHotkeyTimerId) {
+			// Interrupt any previous hotkey timer
+			window.clearTimeout(this.currentHotkeyTimerId);
+			this.currentHotkeyTimerId = undefined;
+			if (this.currentHotkeyButtonId && this.currentHotkeyButtonId !== buttonId) {
+				// Interrupt any previous flashing button
+				const hotkeyButtonEl = this.hotkeyButtonMap.get(this.currentHotkeyButtonId);
+				hotkeyButtonEl?.removeClass('calculite-hotkey-pressed');
+			}
+		}
+
+		// Flash button by applying a style
+		const buttonEl = this.hotkeyButtonMap.get(buttonId);
+		buttonEl?.addClass('calculite-hotkey-pressed');
+
+		// Unflash button after 150ms
+		this.currentHotkeyButtonId = buttonId;
+		this.currentHotkeyTimerId = window.setTimeout(() => {
+			buttonEl?.removeClass('calculite-hotkey-pressed');
+			this.currentHotkeyTimerId = undefined;
+		}, 150);
 	}
 
 	/**
