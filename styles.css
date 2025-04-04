@@ -23,6 +23,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: right;
+	transform-origin: right;
 
 	color: var(--text-faint);
 	font-size: 1em;
@@ -37,6 +38,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: right;
+	transform-origin: right;
 
 	font-size: 3em;
 	font-weight: 600;

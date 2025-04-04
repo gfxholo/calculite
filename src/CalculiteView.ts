@@ -40,6 +40,7 @@ export class CalculiteView extends ItemView {
 	// Screens
 	private subscreenEl: HTMLDivElement;
 	private screenEl: HTMLDivElement;
+	private canvasCtx: CanvasRenderingContext2D | null;
 
 	// Numeric state
 	private previousResult: number | null = null;
@@ -115,6 +116,10 @@ export class CalculiteView extends ItemView {
 		// Update font size
 		const fontSize = Math.max(8, dimension / divisor);
 		this.contentEl.style.fontSize = fontSize + 'px';
+
+		// Prevent screen overflow
+		this.condenseScreen(this.subscreenEl);
+		this.condenseScreen(this.screenEl);
 	}
 
 	/**
@@ -126,6 +131,26 @@ export class CalculiteView extends ItemView {
 		this.screenEl = this.contentEl.createDiv({ cls: 'calculite-screen' });
 		this.updateSubscreen(null);
 		this.updateScreen(null);
+
+		// Create a canvas context for measuring screen width
+		this.canvasCtx = document.createElement('canvas').getContext('2d');
+
+		// Watch both screens for changes
+		const observer = new MutationObserver(records => {
+			for (const record of records) {
+				if (record.target instanceof HTMLDivElement) {
+					this.condenseScreen(record.target);
+				}
+			}
+		});
+		observer.observe(this.subscreenEl, { childList: true });
+		observer.observe(this.screenEl, { childList: true });
+
+		// Watch theme for changes
+		this.app.workspace.on('css-change', () => {
+			this.condenseScreen(this.subscreenEl);
+			this.condenseScreen(this.screenEl);
+		});
 
 		// Register copy listener (Ctrl+C)
 		this.registerDomEvent(this.containerEl, 'copy', event => {
@@ -729,6 +754,30 @@ export class CalculiteView extends ItemView {
 
 		// Output to screen
 		this.screenEl.setText(output);
+	}
+
+	/**
+	 * Condense a screen if necessary to prevent text overflow.
+	 * @param screenEl Any screen element.
+	 */
+	private condenseScreen(screenEl: HTMLDivElement): void {
+		if (!this.canvasCtx || screenEl.hasClass('calculite-blank')) {
+			return;
+		}
+
+		// Remove any scaling before measurement
+		screenEl.removeAttribute('style');
+
+		// Measure the overflow ratio
+		const { fontWeight, fontSize, fontFamily } = getComputedStyle(screenEl);
+		this.canvasCtx.font = `${fontWeight} ${fontSize} ${fontFamily}`;
+		const textWidth = this.canvasCtx.measureText(screenEl.getText()).width
+		const overflow = textWidth / screenEl.clientWidth;
+
+		// If screen is overflowing, scale it to fit perfectly
+		if (overflow > 1) {
+			screenEl.style.setProperty('transform', `scaleX(${1 / overflow})`);
+		}
 	}
 
 	/**
