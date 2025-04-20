@@ -49,6 +49,7 @@ export class CalculiteView extends ItemView {
 	private currentResult: number | null = null;
 	private currentOperator: string | null = null;
 	private currentInput: string | null = null;
+	private currentError: string | null = null;
 
 	// Button state
 	private hotkeyButtonMap: Map<string | number, HTMLButtonElement> = new Map();
@@ -486,6 +487,7 @@ export class CalculiteView extends ItemView {
 		this.currentResult = null;
 		this.currentOperator = null;
 		this.currentInput = null;
+		this.currentError = null;
 
 		// Update both screens
 		this.updateSubscreen(null);
@@ -513,7 +515,10 @@ export class CalculiteView extends ItemView {
 	 * @param shiftKey If true, delete the first character instead.
 	 */
 	private pressBack(shiftKey?: boolean): void {
-		if (!this.currentInput) {
+		if (this.currentError) {
+			this.pressClear();
+			return;
+		} else if (!this.currentInput) {
 			return;
 		}
 
@@ -580,6 +585,10 @@ export class CalculiteView extends ItemView {
 	 * Toggle the input between positive & negative.
 	 */
 	private pressNegate(): void {
+		if (this.currentError) {
+			this.pressClear();
+		}
+
 		let output: string;
 
 		// If latest input is a number:
@@ -611,6 +620,10 @@ export class CalculiteView extends ItemView {
 	 * @param operator An operator (ADD, SUBTRACT, MULTIPLY, or DIVIDE).
 	 */
 	private pressOperator(operator: string): void {
+		if (this.currentError) {
+			return;
+		}
+
 		// Overwrite previous result
 		this.previousResult = this.currentResult;
 
@@ -632,6 +645,11 @@ export class CalculiteView extends ItemView {
 		this.previousInput = Number(this.currentInput);
 		if (this.currentOperator) this.previousOperator = this.currentOperator;
 
+		// Check for arithmetic errors
+		if (this.isDividingByZero() || this.isTooSmall() || this.isTooLarge()) {
+			return;
+		}
+
 		// Update current input & operator
 		this.currentInput = null;
 		this.currentOperator = operator;
@@ -645,6 +663,10 @@ export class CalculiteView extends ItemView {
 	 * Show the calculated result.
 	 */
 	private pressEquals(): void {
+		if (this.currentError) {
+			return;
+		}
+
 		// Overwrite previous result
 		this.previousResult = this.currentResult;
 
@@ -668,6 +690,11 @@ export class CalculiteView extends ItemView {
 		if (this.currentInput || this.currentOperator) {
 			this.previousInput = Number(this.currentInput);
 			this.previousOperator = this.currentOperator;
+		}
+
+		// Check for arithmetic errors
+		if (this.isDividingByZero() || this.isTooSmall() || this.isTooLarge()) {
+			return;
 		}
 
 		// Reset current input & operator
@@ -703,6 +730,65 @@ export class CalculiteView extends ItemView {
 	}
 
 	/**
+	 * Check whether current equation divides by zero, and display an error if so.
+	 * @return True if an error was triggered.
+	 */
+	private isDividingByZero(): boolean {
+		if (this.currentOperator === DIVIDE && this.currentInput && Number(this.currentInput) === 0) {
+			const subscreen = [this.previousResult, this.previousOperator, this.previousInput, '='];
+			this.pressClear();
+			this.updateSubscreen(subscreen);
+			this.currentError = 'Cannot divide by zero';
+			this.updateScreen(this.currentError, true);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * Check whether current equation underflows a 64-bit float, and display an error if so.
+	 * @return True if an error was triggered.
+	 */
+	private isTooSmall(): boolean {
+		if (this.currentResult !== 0) {
+			return false;
+		}
+
+		// Determine whether the result underflowed to zero
+		const wasNotZero = this.previousResult !== 0 && Number(this.previousInput) !== 0;
+		const wasMulting = this.previousOperator === MULTIPLY || this.previousOperator === DIVIDE;
+
+		if (wasNotZero && wasMulting) {
+			const subscreen = [this.previousResult, this.previousOperator, this.previousInput, '='];
+			this.pressClear();
+			this.updateSubscreen(subscreen);
+			this.currentError = 'Number too small';
+			this.updateScreen(this.currentError, true);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * Check whether current equation overflows a 64-bit float, and display an error if so.
+	 * @return True if an error was triggered.
+	 */
+	private isTooLarge(): boolean {
+		if (this.currentResult !== null && Math.abs(this.currentResult) > Number.MAX_VALUE) {
+			const subscreen = [this.previousResult, this.previousOperator, this.previousInput, '='];
+			this.pressClear();
+			this.updateSubscreen(subscreen);
+			this.currentError = 'Number too large';
+			this.updateScreen(this.currentError, true);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	/**
 	 * Update the subscreen.
 	 * @param output An array of numbers and strings. Null values are skipped.
 	 */
@@ -728,8 +814,10 @@ export class CalculiteView extends ItemView {
 	 * Update the main screen.
 	 * @param output A number or string. Null clears the screen.
 	 */
-	private updateScreen(output: number | string | null): void {
-		if (output === null) {
+	private updateScreen(output: number | string | null, isError = false): void {
+		if (isError) {
+			output = String(output);
+		} else if (output === null) {
 			output = '0';
 		} else {
 			// Replace ASCII symbols with typographical symbols
@@ -754,6 +842,7 @@ export class CalculiteView extends ItemView {
 
 		// Output to screen
 		this.screenEl.setText(output);
+		this.screenEl.toggleClass('calculite-error', isError);
 	}
 
 	/**
@@ -821,7 +910,7 @@ export class CalculiteView extends ItemView {
 		// Reject invalid numbers like NaN and Infinity
 		if (!Number.isFinite(pastedNumber)) {
 			this.currentInput = null;
-			this.updateScreen('Invalid number');
+			this.updateScreen('Invalid number', true);
 		} else {
 			this.currentInput = pastedNumerics;
 			this.updateScreen(this.currentInput);

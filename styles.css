@@ -51,6 +51,10 @@
 	visibility: hidden;
 }
 
+.calculite > .calculite-error {
+	color: var(--text-error);
+}
+
 .calculite > .calculite-copied {
 	animation-name: copied;
 	animation-duration: var(--anim-duration-fast);
