@@ -52,6 +52,8 @@ export class CalculiteView extends ItemView {
 	private currentError: string | null = null;
 
 	// Button state
+	private currentClickTarget: EventTarget | null = null;
+	private currentTouchTimerId: number | undefined;
 	private hotkeyButtonMap: Map<string | number, HTMLButtonElement> = new Map();
 	private currentHotkeyButtonId: string | null = null;
 	private currentHotkeyTimerId: number | undefined;
@@ -226,92 +228,150 @@ export class CalculiteView extends ItemView {
 	private createButtons(): void {
 		// Create 1st row
 		this.contentEl.createEl('button', { cls: 'calculite-delete', text: CLEAR }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressClear());
+			this.registerButtonListeners(el, () => this.pressClear());
 			this.hotkeyButtonMap.set(CLEAR, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-delete', text: CLEAR_ENTRY }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressClearEntry());
+			this.registerButtonListeners(el, () => this.pressClearEntry());
 			this.hotkeyButtonMap.set(CLEAR_ENTRY, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-delete', text: BACK }, el => {
-			this.registerDomEvent(el, 'click', event => this.pressBack(event.shiftKey));
+			this.registerButtonListeners(el, event => this.pressBack(event.shiftKey));
 			this.hotkeyButtonMap.set(BACK, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-operator', text: DIVIDE }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressOperator(DIVIDE));
+			this.registerButtonListeners(el, () => this.pressOperator(DIVIDE));
 			this.hotkeyButtonMap.set(DIVIDE, el);
 		});
 
 		// Create 2nd row
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_7 }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressDigit(7));
+			this.registerButtonListeners(el, () => this.pressDigit(7));
 			this.hotkeyButtonMap.set(DIGIT_7, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_8 }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressDigit(8));
+			this.registerButtonListeners(el, () => this.pressDigit(8));
 			this.hotkeyButtonMap.set(DIGIT_8, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_9 }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressDigit(9));
+			this.registerButtonListeners(el, () => this.pressDigit(9));
 			this.hotkeyButtonMap.set(DIGIT_9, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-operator', text: MULTIPLY }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressOperator(MULTIPLY));
+			this.registerButtonListeners(el, () => this.pressOperator(MULTIPLY));
 			this.hotkeyButtonMap.set(MULTIPLY, el);
 		});
 
 		// Create 3rd row
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_4 }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressDigit(4));
+			this.registerButtonListeners(el, () => this.pressDigit(4));
 			this.hotkeyButtonMap.set(DIGIT_4, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_5 }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressDigit(5));
+			this.registerButtonListeners(el, () => this.pressDigit(5));
 			this.hotkeyButtonMap.set(DIGIT_5, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_6 }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressDigit(6));
+			this.registerButtonListeners(el, () => this.pressDigit(6));
 			this.hotkeyButtonMap.set(DIGIT_6, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-operator', text: SUBTRACT }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressOperator(SUBTRACT));
+			this.registerButtonListeners(el, () => this.pressOperator(SUBTRACT));
 			this.hotkeyButtonMap.set(SUBTRACT, el);
 		});
 
 		// Create 4th row
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_1 }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressDigit(1));
+			this.registerButtonListeners(el, () => this.pressDigit(1));
 			this.hotkeyButtonMap.set(DIGIT_1, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_2 }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressDigit(2));
+			this.registerButtonListeners(el, () => this.pressDigit(2));
 			this.hotkeyButtonMap.set(DIGIT_2, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_3 }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressDigit(3));
+			this.registerButtonListeners(el, () => this.pressDigit(3));
 			this.hotkeyButtonMap.set(DIGIT_3, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-operator', text: ADD }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressOperator(ADD));
+			this.registerButtonListeners(el, () => this.pressOperator(ADD));
 			this.hotkeyButtonMap.set(ADD, el);
 		});
 
 		// Create 5th row
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: NEGATE }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressNegate());
+			this.registerButtonListeners(el, () => this.pressNegate());
 			this.hotkeyButtonMap.set(NEGATE, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DIGIT_0 }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressDigit(0));
+			this.registerButtonListeners(el, () => this.pressDigit(0));
 			this.hotkeyButtonMap.set(DIGIT_0, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-numeric', text: DECIMAL }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressDecimal());
+			this.registerButtonListeners(el, () => this.pressDecimal());
 			this.hotkeyButtonMap.set(DECIMAL, el);
 		});
 		this.contentEl.createEl('button', { cls: 'calculite-operator', text: EQUALS }, el => {
-			this.registerDomEvent(el, 'click', () => this.pressEquals());
+			this.registerButtonListeners(el, () => this.pressEquals());
 			this.hotkeyButtonMap.set(EQUALS, el);
+		});
+	}
+
+	/**
+	 * Register mouse & touch listeners on a button.
+	 */
+	private registerButtonListeners(buttonEl: HTMLButtonElement, onPress: (event: PointerEvent) => any): void {
+		// Simulate keyboard-repeat on touchscreens
+		const touchRepeater = (event: PointerEvent) => {
+			this.currentTouchTimerId = window.setInterval(() => {
+				if (Platform.isMobile) {
+					// @ts-expect-error (Private API)
+					const drawerEl = this.leaf.parent.containerEl;
+					// If drawer is sliding shut, stop the repeater
+					if (drawerEl instanceof HTMLElement && drawerEl.style.transform.includes('translateX')) {
+						window.clearTimeout(this.currentTouchTimerId);
+						return;
+					}
+				}
+				window.navigator.vibrate(100);
+				// If onPress stops returning true, stop the repeater
+				if (onPress(event) !== true) {
+					window.clearTimeout(this.currentTouchTimerId);
+				}
+			}, 50);
+		}
+
+		// Register button-press listener
+		this.registerDomEvent(buttonEl, 'pointerdown', event => {
+			if (event.pointerType === 'mouse') {
+				// Prepare for click-release
+				this.currentClickTarget = event.target;
+			} else if (event.pointerType === 'touch') {
+				window.navigator.vibrate(100);
+				window.clearTimeout(this.currentTouchTimerId);
+				// If onPress returns true, continue repeating button while held
+				if (onPress(event) === true) {
+					this.currentTouchTimerId = window.setTimeout(() => touchRepeater(event), 300);
+				}
+			}
+		});
+
+		// Register button-release listeners
+		this.registerDomEvent(buttonEl, 'pointerup', event => {
+			// If a clicked button is unclicked, activate it
+			if (event.pointerType === 'mouse' && event.target === this.currentClickTarget) {
+				onPress(event);
+				this.currentClickTarget = null;
+			// If a touch is lifted, stop any repeaters
+			} else if (event.pointerType === 'touch') {
+				window.clearTimeout(this.currentTouchTimerId);
+			}
+		});
+		this.registerDomEvent(buttonEl, 'touchend', () => {
+			window.clearTimeout(this.currentTouchTimerId);
+		});
+		this.registerDomEvent(buttonEl, 'touchcancel', () => {
+			window.clearTimeout(this.currentTouchTimerId);
 		});
 	}
 
@@ -513,13 +573,14 @@ export class CalculiteView extends ItemView {
 	/**
 	 * Delete the last character from the main screen.
 	 * @param shiftKey If true, delete the first character instead.
+	 * @returns True if back can be repeated.
 	 */
-	private pressBack(shiftKey?: boolean): void {
+	private pressBack(shiftKey?: boolean): boolean {
 		if (this.currentError) {
 			this.pressClear();
-			return;
+			return false;
 		} else if (!this.currentInput) {
-			return;
+			return false;
 		}
 
 		// Remove one character from the input
@@ -534,13 +595,17 @@ export class CalculiteView extends ItemView {
 
 		// Update screen
 		this.updateScreen(this.currentInput);
+
+		// Check whether any characters are left
+		return this.currentInput !== null;
 	}
 
 	/**
 	 * Append a digit to the main screen.
 	 * @param digit Number from 0-9.
+	 * @returns True if digit can be repeated.
 	 */
-	private pressDigit(digit: 0|1|2|3|4|5|6|7|8|9): void {
+	private pressDigit(digit: 0|1|2|3|4|5|6|7|8|9): boolean {
 		// If input is empty:
 		if (!this.currentInput) {
 			// If no operator is active:
@@ -559,6 +624,9 @@ export class CalculiteView extends ItemView {
 
 		// Update screen
 		this.updateScreen(this.currentInput);
+
+		// Always repeatable
+		return true;
 	}
 
 	/**
@@ -661,10 +729,11 @@ export class CalculiteView extends ItemView {
 
 	/**
 	 * Show the calculated result.
+	 * @returns True if equals can be repeated.
 	 */
-	private pressEquals(): void {
+	private pressEquals(): boolean {
 		if (this.currentError) {
-			return;
+			return false;
 		}
 
 		// Overwrite previous result
@@ -694,7 +763,7 @@ export class CalculiteView extends ItemView {
 
 		// Check for arithmetic errors
 		if (this.isDividingByZero() || this.isTooSmall() || this.isTooLarge()) {
-			return;
+			return false;
 		}
 
 		// Reset current input & operator
@@ -708,6 +777,14 @@ export class CalculiteView extends ItemView {
 			this.updateSubscreen([this.previousInput, '=']);
 		}
 		this.updateScreen(this.currentResult);
+
+		// Check whether pressing equals again will change the result
+		const result0 = this.previousResult === 0;
+		const input0 = this.previousInput === 0;
+		const input1 = this.previousInput === 1;
+		const isAdding = this.previousOperator === ADD || this.previousOperator === SUBTRACT;
+		const isMulting = this.previousOperator === MULTIPLY || this.previousOperator === DIVIDE;
+		return (isAdding && !input0) || (isMulting && !result0 && !input0 && !input1);
 	}
 
 	/**
