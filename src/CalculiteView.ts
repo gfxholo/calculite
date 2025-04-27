@@ -5,6 +5,7 @@ const DISPLAY_TEXT = 'Calculite';
 const ICON = 'lucide-calculator';
 
 // Number formatting
+const MAX_DIGITS = 30;
 const NUMBER_FORMAT = new Intl.NumberFormat(localStorage.language); // Pre-1.8.7 compatible
 const GROUPING_SYMBOL = NUMBER_FORMAT.format(1000).toString()[1];
 const DECIMAL_SYMBOL = NUMBER_FORMAT.format(0.1).toString()[1];
@@ -613,7 +614,10 @@ export class CalculiteView extends ItemView {
 				this.pressClear();
 			}
 			this.currentInput = String(digit);
-		// If input is not empty:
+		// If input cannot hold any more digits:
+		} else if (this.countDigits(this.currentInput) >= MAX_DIGITS) {
+			return false;
+		// If input has space for another digit:
 		} else {
 			// If input is zero:
 			if (this.currentInput === '0' || this.currentInput === '-0') {
@@ -625,8 +629,8 @@ export class CalculiteView extends ItemView {
 		// Update screen
 		this.updateScreen(this.currentInput);
 
-		// Always repeatable
-		return true;
+		// Check whether input can hold any more digits
+		return this.countDigits(this.currentInput) < MAX_DIGITS;
 	}
 
 	/**
@@ -988,6 +992,9 @@ export class CalculiteView extends ItemView {
 		if (!Number.isFinite(pastedNumber)) {
 			this.currentInput = null;
 			this.updateScreen('Invalid number', true);
+		} else if (this.countDigits(pastedNumerics) > MAX_DIGITS) {
+			this.currentInput = null;
+			this.updateScreen(`Maximum of ${MAX_DIGITS} digits`, true);
 		} else {
 			this.currentInput = pastedNumerics;
 			this.updateScreen(this.currentInput);
@@ -1022,5 +1029,15 @@ export class CalculiteView extends ItemView {
 		const node = screenEl.firstChild ?? screenEl;
 
 		return selection?.containsNode(node) ? selection : null;
+	}
+
+	/**
+	 * Count the number of numeric digits in a string.
+	 * @param output A string representing a number.
+	 * @returns The digit count.
+	 */
+	private countDigits(output: string): number {
+		const matches = output.match(/\d/g) ?? [];
+		return matches.length;
 	}
 }
