@@ -133,3 +133,16 @@ body:not(.is-mobile) .calculite > button.calculite-operator:hover {
 .calculite > button.calculite-operator.calculite-hotkey-pressed {
 	background-color: color-mix(in srgb, var(--interactive-accent), black 15%);
 }
+
+.calculite-floating .workspace-tab-header-container-inner,
+.calculite-floating .workspace-tab-header-new-tab,
+.calculite-floating .workspace-tab-header-tab-list,
+.calculite-floating .titlebar-button.mod-minimize,
+.calculite-floating .titlebar-button.mod-maximize,
+.calculite-floating .view-header {
+	display: none;
+}
+
+.calculite-floating .is-hidden-frameless:not(.is-fullscreen):not(.mod-macos) .workspace-tabs.mod-top-right-space .workspace-tab-header-container:after {
+	width: var(--header-height);
+}
