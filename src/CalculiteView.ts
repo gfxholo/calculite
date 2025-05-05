@@ -1,4 +1,4 @@
-import { IconName, ItemView, Menu, Platform, Scope, WorkspaceLeaf } from 'obsidian';
+import { IconName, ItemView, Menu, Platform, Scope, ViewStateResult, WorkspaceLeaf } from 'obsidian';
 
 export const VIEW_TYPE = 'calculite';
 const DISPLAY_TEXT = 'Calculite';
@@ -104,6 +104,56 @@ export class CalculiteView extends ItemView {
 
 		// Initialize font scaling
 		this.onResize();
+	}
+
+	/**
+	 * Preserve view state when the workspace is saved.
+	 * @returns A custom state object.
+	 * @override
+	 */
+	getState(): Record<string, unknown> {
+		return {
+			previousResult: this.previousResult,
+			previousOperator: this.previousOperator,
+			previousInput: this.previousInput,
+			currentResult: this.currentResult,
+			currentOperator: this.currentOperator,
+			currentInput: this.currentInput,
+			currentError: this.currentError,
+		}
+	}
+
+	/**
+	 * Restore view state when the workspace is loaded.
+	 * @param state A custom state object.
+	 * @param result Not used.
+	 * @override
+	 */
+	setState(state: any, result: ViewStateResult): Promise<void> {
+		if (state === null || typeof state !== 'object') {
+			state = {};
+		}
+
+		// Restore numeric state
+		this.previousResult = state.previousResult ?? null;
+		this.previousOperator = state.previousOperator ?? null;
+		this.previousInput = state.previousInput ?? null;
+		this.currentResult = state.currentResult ?? null;
+		this.currentOperator = state.currentOperator ?? null;
+		this.currentInput = state.currentInput ?? null;
+
+		// Restore both screens
+		if (this.currentOperator) {
+			this.updateSubscreen([this.currentResult, this.currentOperator]);
+		} else if (this.previousOperator) {
+			this.updateSubscreen([this.previousResult, this.previousOperator, this.previousInput, '=']);
+		} else if (this.previousInput !== null) {
+			this.updateSubscreen([this.previousInput, '=']);
+		}
+		this.updateScreen(this.currentError ?? this.currentInput ?? this.currentResult, this.currentError !== null);
+
+		// Forward to superclass
+		return super.setState(state, result);
 	}
 
 	/**
@@ -889,6 +939,9 @@ export class CalculiteView extends ItemView {
 		// Output to subscreen
 		this.subscreenEl.setText(output);
 		this.subscreenEl.toggleClass('calculite-invisible', outputs === null);
+
+		// Ask workspace to preserve view state
+		this.app.workspace.requestSaveLayout();
 	}
 
 	/**
@@ -924,6 +977,9 @@ export class CalculiteView extends ItemView {
 		// Output to screen
 		this.screenEl.setText(output);
 		this.screenEl.toggleClass('calculite-error', isError);
+
+		// Ask workspace to preserve view state
+		this.app.workspace.requestSaveLayout();
 	}
 
 	/**
