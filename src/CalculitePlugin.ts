@@ -24,6 +24,13 @@ export default class CalculitePlugin extends Plugin {
 			callback: () => this.showCalculator(),
 		});
 
+		// COMMAND: Toggle between sidebars
+		this.addCommand({
+			id: 'toggle-between-sidebars',
+			name: 'Toggle between sidebars',
+			callback: () => this.toggleBetweenSidebars(),
+		});
+
 		// COMMAND: Toggle floating calculator
 		if (Platform.isDesktopApp && window.activeWindow) { // Skip on app versions below 0.15
 			this.addCommand({
@@ -45,6 +52,34 @@ export default class CalculitePlugin extends Plugin {
 			// Open calculator in bottom of right sidebar
 			leaf = this.app.workspace.getRightLeaf(true);
 			leaf?.setViewState({ type: VIEW_TYPE });
+		}
+
+		if (leaf) {
+			// Bring calculator to foreground
+			this.app.workspace.revealLeaf(leaf);
+		}
+	}
+
+	/**
+	 * Summon a calculator leaf, or move it to the opposite sidebar.
+	 */
+	private toggleBetweenSidebars(): void {
+		// Check for an existing calculator
+		let leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE).first() ?? null;
+
+		if (!leaf) {
+			// Open calculator in bottom of right sidebar
+			leaf = this.app.workspace.getRightLeaf(true);
+			leaf?.setViewState({ type: VIEW_TYPE });
+		} else {
+			// Move calculator to opposite sidebar
+			const state = leaf.getViewState();
+			const inLeftSidebar = leaf?.getRoot() === this.app.workspace.leftSplit.getRoot();
+			leaf.detach();
+			leaf = inLeftSidebar
+				? this.app.workspace.getRightLeaf(true)
+				: this.app.workspace.getLeftLeaf(true);
+			leaf?.setViewState(state);
 		}
 
 		if (leaf) {
